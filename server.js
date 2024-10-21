@@ -11,6 +11,8 @@ dotenv.config({ path: "config.env" });
 const ApiError = require("./utils/apiError");
 const globalError = require("./middlewares/errorMiddleware");
 const dbConnection = require("./config/database");
+const checkoutWebhook = require("./services/orderService");
+
 // Routes
 const mountRoutes = require("./routes");
 
@@ -38,6 +40,11 @@ if (process.env.NODE_ENV === "development") {
 
 // Mount Routs
 mountRoutes(app);
+app.post(
+  "/checkout-webhook",
+  express.raw({ type: "application/json" }),
+  checkoutWebhook
+);
 
 app.all("*", (req, res, next) => {
   next(new ApiError(`Can't Find This Route: ${req.originalUrl}`, 400));

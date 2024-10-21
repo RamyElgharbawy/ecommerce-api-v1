@@ -165,3 +165,29 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
   // 4- send session as a response
   res.status(200).json({ status: "Success", session });
 });
+
+// @desc      Get Checkout Session From Stripe & Send it to Client side
+// @route     GET /api/v1/orders/checkout-session/:cartId
+// @access    Private/user
+exports.checkoutWebhook = asyncHandler(async (req, res, next) => {
+  let event;
+
+  // Get the signature sent by Stripe
+  const signature = req.headers["stripe-signature"];
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      signature,
+      process.env.WEBHOOK_SIGNING_SECRET
+    );
+  } catch (err) {
+    console.log(`⚠️  Webhook signature verification failed.`, err.message);
+    return res
+      .status(400)
+      .send(`⚠️  Webhook signature verification failed.`, err.message);
+  }
+  if (event.type === "checkout.session.completed") {
+    console.log("Create order here........");
+  }
+});
