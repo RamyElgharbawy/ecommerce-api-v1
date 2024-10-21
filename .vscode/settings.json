@@ -1,0 +1,14 @@
+{
+  "cSpell.words": ["maxlength", "virtuals"],
+  "separators.enabledSymbols": [
+    "Classes",
+    "Enums",
+    "Functions",
+    "Interfaces",
+    "Methods",
+    "Namespaces",
+    "Structs"
+  ],
+  // "separators.functions.ignoreCallbackInline": true
+  "separators.minimumLineCount": 2
+}
