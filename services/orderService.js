@@ -65,28 +65,6 @@ exports.createCashOrder = asyncHandler(async (req, res, next) => {
   // 3- Create Order with default paymentMethodType [cash].
   const order = await createOrder(orderObj, cart);
 
-  // const order = await Order.create({
-  //   user: req.user._id,
-  //   cartItems: cart.cartItems,
-  //   shippingAddress: req.body.shippingAddress,
-  //   totalOrderPrice,
-  // });
-
-  // // 4- Adjust Quantity and Sold properties of Product in db.
-  // if (order) {
-  //   const bulkOptions = cart.cartItems.map((item) => ({
-  //     updateOne: {
-  //       filter: { _id: item.product },
-  //       update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
-  //     },
-  //   }));
-
-  //   await Product.bulkWrite(bulkOptions, {});
-
-  //   // 5- Clear user cart.
-  //   await Cart.findByIdAndDelete(req.params.cartId);
-  // }
-
   res.status(201).json({ status: "Success", data: order });
 });
 
