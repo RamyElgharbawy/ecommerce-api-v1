@@ -8,6 +8,29 @@ const Product = require("../models/productModel");
 const Order = require("../models/orderModel");
 const User = require("../models/userModel");
 
+// create order function
+const createOrder = async (orderObj, cart) => {
+  // 3- Create Order with default paymentMethodType [cash].
+  const order = await Order.create(orderObj);
+
+  // 4- Adjust Quantity and Sold properties of Product in db.
+  if (order) {
+    const bulkOptions = cart.cartItems.map((item) => ({
+      updateOne: {
+        filter: { _id: item.product },
+        update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
+      },
+    }));
+
+    await Product.bulkWrite(bulkOptions, {});
+
+    // 5- Clear user cart.
+    await Cart.findByIdAndDelete(cart._id);
+  }
+
+  return order;
+};
+
 // @desc      Create Order Service
 // @route     POST /api/v1/orders/cartId
 // @access    Private/user
@@ -31,28 +54,38 @@ exports.createCashOrder = asyncHandler(async (req, res, next) => {
 
   const totalOrderPrice = cartPrice + taxPrice + shippingPrice;
 
-  // 3- Create Order with default paymentMethodType [cash].
-  const order = await Order.create({
+  // create order object
+  const orderObj = {
     user: req.user._id,
     cartItems: cart.cartItems,
     shippingAddress: req.body.shippingAddress,
     totalOrderPrice,
-  });
+  };
 
-  // 4- Adjust Quantity and Sold properties of Product in db.
-  if (order) {
-    const bulkOptions = cart.cartItems.map((item) => ({
-      updateOne: {
-        filter: { _id: item.product },
-        update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
-      },
-    }));
+  // 3- Create Order with default paymentMethodType [cash].
+  const order = await createOrder(orderObj, cart);
 
-    await Product.bulkWrite(bulkOptions, {});
+  // const order = await Order.create({
+  //   user: req.user._id,
+  //   cartItems: cart.cartItems,
+  //   shippingAddress: req.body.shippingAddress,
+  //   totalOrderPrice,
+  // });
 
-    // 5- Clear user cart.
-    await Cart.findByIdAndDelete(req.params.cartId);
-  }
+  // // 4- Adjust Quantity and Sold properties of Product in db.
+  // if (order) {
+  //   const bulkOptions = cart.cartItems.map((item) => ({
+  //     updateOne: {
+  //       filter: { _id: item.product },
+  //       update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
+  //     },
+  //   }));
+
+  //   await Product.bulkWrite(bulkOptions, {});
+
+  //   // 5- Clear user cart.
+  //   await Cart.findByIdAndDelete(req.params.cartId);
+  // }
 
   res.status(201).json({ status: "Success", data: order });
 });
@@ -179,8 +212,8 @@ const createCardOrder = async (session) => {
   // get user
   const user = await User.findOne({ email: session.customer_email });
 
-  // 3- Create Order with default paymentMethodType [cash].
-  const order = await Order.create({
+  // create order object
+  const orderObj = {
     user: user._id,
     cartItems: cart.cartItems,
     shippingAddress,
@@ -188,22 +221,10 @@ const createCardOrder = async (session) => {
     isPaid: true,
     paidAt: Date.now(),
     paymentMethodType: "card",
-  });
+  };
 
-  // 4- Adjust Quantity and Sold properties of Product in db.
-  if (order) {
-    const bulkOptions = cart.cartItems.map((item) => ({
-      updateOne: {
-        filter: { _id: item.product },
-        update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
-      },
-    }));
-
-    await Product.bulkWrite(bulkOptions, {});
-
-    // 5- Clear user cart.
-    await Cart.findByIdAndDelete(cartId);
-  }
+  // 3- Create Order with default paymentMethodType [cash].
+  createOrder(orderObj, cart);
 };
 
 // @desc      Implement Stripe webhook & Create order
@@ -221,18 +242,13 @@ exports.checkoutWebhook = asyncHandler(async (req, res, next) => {
       signature,
       process.env.WEBHOOK_SIGNING_SECRET
     );
-
-    console.log(event);
   } catch (err) {
     return res
       .status(400)
       .send(`⚠️  Webhook signature verification failed.`, err.message);
   }
-  console.log(event);
 
   if (event.type === "checkout.session.completed") {
-    console.log("Create order here........");
-
     // create order
     createCardOrder(event.data.object);
   }
