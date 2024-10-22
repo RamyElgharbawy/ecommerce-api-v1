@@ -11,10 +11,10 @@ dotenv.config({ path: "config.env" });
 const ApiError = require("./utils/apiError");
 const globalError = require("./middlewares/errorMiddleware");
 const dbConnection = require("./config/database");
-const checkoutWebhook = require("./services/orderService");
 
 // Routes
 const mountRoutes = require("./routes");
+const { checkoutWebhook } = require("./services/orderService");
 
 // connect to database
 dbConnection();
@@ -29,6 +29,13 @@ app.options("*", cors());
 // compress all responses
 app.use(compression());
 
+// Stripe webhook Route
+app.post(
+  "/checkout-webhook",
+  express.raw({ type: "application/json" }),
+  checkoutWebhook
+);
+
 // MiddleWare
 app.use(express.json()); // parse headers and body
 app.use(express.static(path.join(__dirname, "uploads"))); // serve static files in static folder
@@ -40,11 +47,6 @@ if (process.env.NODE_ENV === "development") {
 
 // Mount Routs
 mountRoutes(app);
-app.post(
-  "/checkout-webhook",
-  express.raw({ type: "application/json" }),
-  checkoutWebhook
-);
 
 app.all("*", (req, res, next) => {
   next(new ApiError(`Can't Find This Route: ${req.originalUrl}`, 400));

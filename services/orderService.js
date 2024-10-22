@@ -166,8 +166,8 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
   res.status(200).json({ status: "Success", session });
 });
 
-// @desc      Get Checkout Session From Stripe & Send it to Client side
-// @route     GET /api/v1/orders/checkout-session/:cartId
+// @desc      Implement Stripe webhook & Create order
+// @route     POST /api/v1/checkout-webhook
 // @access    Private/user
 exports.checkoutWebhook = asyncHandler(async (req, res, next) => {
   let event;
