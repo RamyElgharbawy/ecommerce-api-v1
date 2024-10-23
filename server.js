@@ -3,6 +3,7 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const compression = require("compression");
+const { rateLimit } = require("express-rate-limit");
 
 const morgan = require("morgan");
 const dotenv = require("dotenv");
@@ -37,13 +38,24 @@ app.post(
 );
 
 // MiddleWare
-app.use(express.json()); // parse headers and body
+app.use(express.json({ limit: "20kb" })); // parse headers and body
 app.use(express.static(path.join(__dirname, "uploads"))); // serve static files in static folder
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
   console.log(`mode: ${process.env.NODE_ENV}`);
 }
+
+// Limit each IP to 100 requests per `window` (here, per 15 minutes)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too Many Requests please try agin after 15 min",
+});
+
+app.use("/api/v1/auth", limiter);
 
 // Mount Routs
 mountRoutes(app);
