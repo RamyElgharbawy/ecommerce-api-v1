@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const compression = require("compression");
 const { rateLimit } = require("express-rate-limit");
+const hpp = require("hpp");
 
 const morgan = require("morgan");
 const dotenv = require("dotenv");
@@ -56,6 +57,19 @@ const limiter = rateLimit({
 });
 
 app.use("/api/v1/auth", limiter);
+
+// Middleware to protect against HTTP Parameter Pollution attacks
+app.use(
+  hpp({
+    whitelist: [
+      "price",
+      "sold",
+      "quantity",
+      "ratingsAverage",
+      "ratingsQuantity",
+    ],
+  })
+);
 
 // Mount Routs
 mountRoutes(app);
