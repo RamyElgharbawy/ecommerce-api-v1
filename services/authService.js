@@ -9,6 +9,7 @@ const ApiError = require("../utils/apiError");
 const User = require("../models/userModel");
 const sendEmail = require("../utils/sendMail");
 const generateToken = require("../utils/createToken");
+const { sanitizeUser } = require("../utils/sanitizeData");
 
 // @desc      Signup Service
 // @route     POST /api/v1/auth/signup
@@ -24,7 +25,7 @@ exports.signup = asyncHandler(async (req, res, next) => {
   // 2- generate JWT
   const token = generateToken(user._id);
 
-  res.status(201).json({ data: user, token });
+  res.status(201).json({ data: sanitizeUser(user), token });
 });
 
 // @desc      login Service
