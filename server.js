@@ -5,6 +5,7 @@ const cors = require("cors");
 const compression = require("compression");
 const { rateLimit } = require("express-rate-limit");
 const hpp = require("hpp");
+const mongoSanitize = require("express-mongo-sanitize");
 
 const morgan = require("morgan");
 const dotenv = require("dotenv");
@@ -47,10 +48,13 @@ if (process.env.NODE_ENV === "development") {
   console.log(`mode: ${process.env.NODE_ENV}`);
 }
 
+// Middleware for sanitize inputs data
+app.use(mongoSanitize());
+
 // Limit each IP to 100 requests per `window` (here, per 15 minutes)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 3,
+  limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: "Too Many Requests please try agin after 15 min",
